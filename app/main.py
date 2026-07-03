@@ -79,6 +79,9 @@ def main() -> None:
         topic=topic,
         brand_name=settings.brand_name,
         cta_text=settings.cta_text,
+        ai_provider=settings.ai_provider,
+        ai_model=settings.ai_model,
+        openai_api_key=settings.openai_api_key,
     )
 
     if settings.safe_mode:
