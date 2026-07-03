@@ -59,7 +59,7 @@ def resolve_topic(args: argparse.Namespace) -> str | None:
 
     if args.random_topic:
         topic = choose_random_topic(args.topics_file, seed=args.seed)
-        print(f"?????? ????????? ????: {topic}")
+        print(f"Selected random topic: {topic}")
         return topic
 
     return args.topic
@@ -89,7 +89,7 @@ def main() -> None:
     if args.print_json:
         print(json.dumps(script_data, ensure_ascii=False, indent=2))
 
-    print(f"?????. ???????? ????????: {path}")
+    print(f"Done. Script saved: {path}")
 
 
 if __name__ == "__main__":
