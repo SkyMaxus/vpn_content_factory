@@ -120,7 +120,8 @@ def _normalize_script(
     fallback = _generate_mock_script(topic, brand_name, cta_text)
 
     for key in REQUIRED_KEYS:
-        if key not in data or data[key] in {None, ""}:
+        value = data.get(key)
+        if value is None or value == "":
             data[key] = fallback[key]
 
     for key in ("subtitles", "visual_ideas", "hashtags"):
