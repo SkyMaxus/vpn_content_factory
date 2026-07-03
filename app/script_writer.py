@@ -128,6 +128,12 @@ def _normalize_script(
         if not isinstance(data.get(key), list):
             data[key] = fallback[key]
 
+    if isinstance(data.get("script"), list):
+        data["script"] = "\n".join(str(item).strip() for item in data["script"] if str(item).strip())
+
+    if isinstance(data.get("voiceover_text"), list):
+        data["voiceover_text"] = " ".join(str(item).strip() for item in data["voiceover_text"] if str(item).strip())
+
     data["topic"] = str(data.get("topic") or topic).strip()
     data["cta"] = str(data.get("cta") or cta_text).strip()
     data["status"] = str(data.get("status") or "draft").strip()
