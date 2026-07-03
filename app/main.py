@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 
 from config import load_settings
+from ideas import choose_random_topic, load_topics
 from moderation import assert_safe_script
 from script_writer import generate_video_script
 
@@ -34,16 +35,48 @@ def save_script(data: dict, topic: str, output_dir: str) -> Path:
     return path
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Generate local VPN video script JSON.")
-    parser.add_argument("--topic", required=True, help="Video topic")
+
+    topic_group = parser.add_mutually_exclusive_group(required=True)
+    topic_group.add_argument("--topic", help="Video topic")
+    topic_group.add_argument("--random-topic", action="store_true", help="Pick random topic from topics file")
+    topic_group.add_argument("--list-topics", action="store_true", help="Show available topics and exit")
+
+    parser.add_argument("--topics-file", default="data/content_topics.json", help="Path to topics JSON file")
+    parser.add_argument("--seed", type=int, default=None, help="Random seed for stable tests/debug")
     parser.add_argument("--print-json", action="store_true", help="Print JSON to console")
+
+    return parser
+
+
+def resolve_topic(args: argparse.Namespace) -> str | None:
+    if args.list_topics:
+        topics = load_topics(args.topics_file)
+        for index, topic in enumerate(topics, start=1):
+            print(f"{index}. {topic}")
+        return None
+
+    if args.random_topic:
+        topic = choose_random_topic(args.topics_file, seed=args.seed)
+        print(f"?????? ????????? ????: {topic}")
+        return topic
+
+    return args.topic
+
+
+def main() -> None:
+    parser = build_parser()
     args = parser.parse_args()
+
+    topic = resolve_topic(args)
+    if topic is None:
+        return
 
     settings = load_settings()
 
     script_data = generate_video_script(
-        topic=args.topic,
+        topic=topic,
         brand_name=settings.brand_name,
         cta_text=settings.cta_text,
     )
@@ -51,12 +84,12 @@ def main() -> None:
     if settings.safe_mode:
         assert_safe_script(script_data)
 
-    path = save_script(script_data, args.topic, settings.output_dir)
+    path = save_script(script_data, topic, settings.output_dir)
 
     if args.print_json:
         print(json.dumps(script_data, ensure_ascii=False, indent=2))
 
-    print(f"\u0413\u043e\u0442\u043e\u0432\u043e. \u0421\u0446\u0435\u043d\u0430\u0440\u0438\u0439 \u0441\u043e\u0445\u0440\u0430\u043d\u0451\u043d: {path}")
+    print(f"?????. ???????? ????????: {path}")
 
 
 if __name__ == "__main__":
