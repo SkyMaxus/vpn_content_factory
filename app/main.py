@@ -14,6 +14,7 @@ from script_writer import generate_video_script
 from subtitles import save_subtitles_srt
 from voice import save_voiceover_stub
 from video_builder import save_video_stub
+from visual_prompts import save_visual_prompts
 
 
 def safe_filename(topic: str) -> str:
@@ -66,6 +67,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--make-video",
         action="store_true",
         help="Save simple vertical MP4 video to output/videos",
+    )
+
+    parser.add_argument(
+        "--make-visual-prompts",
+        action="store_true",
+        help="Save AI-video prompts to output/prompts",
     )
 
     return parser
@@ -122,6 +129,10 @@ def main() -> None:
     if args.make_video:
         video_path = save_video_stub(script_data, topic)
 
+    visual_prompts_path = None
+    if args.make_visual_prompts:
+        visual_prompts_path = save_visual_prompts(script_data, topic)
+
     if args.print_json:
         print(json.dumps(script_data, ensure_ascii=False, indent=2))
 
@@ -132,6 +143,8 @@ def main() -> None:
         print(f"Voiceover saved: {voice_path}")
     if video_path is not None:
         print(f"Video saved: {video_path}")
+    if visual_prompts_path is not None:
+        print(f"Visual prompts saved: {visual_prompts_path}")
 
 
 if __name__ == "__main__":
