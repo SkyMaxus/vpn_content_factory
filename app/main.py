@@ -13,6 +13,7 @@ from moderation import assert_safe_script
 from script_writer import generate_video_script
 from subtitles import save_subtitles_srt
 from voice import save_voiceover_stub
+from video_builder import save_video_stub
 
 
 def safe_filename(topic: str) -> str:
@@ -59,6 +60,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--make-subtitles",
         action="store_true",
         help="Save subtitles to output/subtitles as an SRT file",
+    )
+
+    parser.add_argument(
+        "--make-video",
+        action="store_true",
+        help="Save simple vertical MP4 video to output/videos",
     )
 
     return parser
@@ -111,6 +118,10 @@ def main() -> None:
     if args.make_voice:
         voice_path = save_voiceover_stub(script_data, topic)
 
+    video_path = None
+    if args.make_video:
+        video_path = save_video_stub(script_data, topic)
+
     if args.print_json:
         print(json.dumps(script_data, ensure_ascii=False, indent=2))
 
@@ -119,6 +130,8 @@ def main() -> None:
         print(f"Subtitles saved: {subtitles_path}")
     if voice_path is not None:
         print(f"Voiceover saved: {voice_path}")
+    if video_path is not None:
+        print(f"Video saved: {video_path}")
 
 
 if __name__ == "__main__":
