@@ -14,6 +14,27 @@ VIDEO_HEIGHT = 1920
 DEFAULT_DURATION_SECONDS = 20
 
 
+BRAND_SUBTITLE = "\u043a\u043e\u0440\u043e\u0442\u043a\u0438\u0439 \u0440\u043e\u043b\u0438\u043a"
+DEFAULT_CTA = "MM VPN \u2014 \u0432\u043a\u043b\u044e\u0447\u0438\u043b \u0438 \u043f\u043e\u043b\u044c\u0437\u0443\u0435\u0448\u044c\u0441\u044f \u0441\u043f\u043e\u043a\u043e\u0439\u043d\u0435\u0435."
+FOOTER_TEXT = "\u0411\u0435\u0437 \u043e\u0431\u0435\u0449\u0430\u043d\u0438\u0439 100% \u0430\u043d\u043e\u043d\u0438\u043c\u043d\u043e\u0441\u0442\u0438. \u041f\u0440\u043e\u0441\u0442\u043e \u0434\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c\u043d\u044b\u0439 \u0441\u043b\u043e\u0439 \u0437\u0430\u0449\u0438\u0442\u044b."
+
+
+def normalize_display_text(value: Any) -> str:
+    """Normalize text before drawing it on the video card."""
+    text = str(value or "")
+    replacements = {
+        "\u2011": "-",  # non-breaking hyphen
+        "\u2010": "-",
+        "\u2012": "-",
+        "\u2013": "\u2014",
+    }
+
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+
+    return text.strip()
+
+
 def safe_filename(value: str) -> str:
     """Convert topic/title text to a safe filename."""
     value = (value or "video").strip().lower()
@@ -75,7 +96,7 @@ def _wrap_text(
     font: ImageFont.ImageFont,
     max_width: int,
 ) -> list[str]:
-    words = str(text or "").split()
+    words = normalize_display_text(text).split()
     if not words:
         return []
 
@@ -119,19 +140,17 @@ def render_title_card(script_data: dict[str, Any], output_path: str | Path) -> P
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    title = str(script_data.get("title") or script_data.get("topic") or "MM VPN")
-    hook = str(script_data.get("hook") or "")
-    cta = str(script_data.get("cta") or "MM VPN ? ??????? ? ??????????? ?????????.")
+    title = normalize_display_text(script_data.get("title") or script_data.get("topic") or "MM VPN")
+    hook = normalize_display_text(script_data.get("hook") or "")
+    cta = normalize_display_text(script_data.get("cta") or DEFAULT_CTA)
 
     image = Image.new("RGB", (VIDEO_WIDTH, VIDEO_HEIGHT), color=(12, 18, 32))
     draw = ImageDraw.Draw(image)
 
-    # Simple dark gradient.
     for y in range(VIDEO_HEIGHT):
         shade = int(12 + (y / VIDEO_HEIGHT) * 28)
         draw.line((0, y, VIDEO_WIDTH, y), fill=(12, 18, 32 + shade // 2))
 
-    # Brand blocks.
     margin = 86
     card_x1 = margin
     card_y1 = 230
@@ -144,8 +163,13 @@ def render_title_card(script_data: dict[str, Any], output_path: str | Path) -> P
         fill=(245, 248, 255),
     )
 
+    cta_x1 = margin
+    cta_y1 = 1480
+    cta_x2 = VIDEO_WIDTH - margin
+    cta_y2 = 1715
+
     draw.rounded_rectangle(
-        (margin, 1480, VIDEO_WIDTH - margin, 1700),
+        (cta_x1, cta_y1, cta_x2, cta_y2),
         radius=42,
         fill=(40, 96, 255),
     )
@@ -153,11 +177,11 @@ def render_title_card(script_data: dict[str, Any], output_path: str | Path) -> P
     brand_font = _find_font(bold=True, size=54)
     title_font = _find_font(bold=True, size=76)
     hook_font = _find_font(bold=False, size=52)
-    cta_font = _find_font(bold=True, size=46)
+    cta_font = _find_font(bold=True, size=42)
     small_font = _find_font(bold=False, size=34)
 
     draw.text((margin, 105), "MM VPN", font=brand_font, fill=(245, 248, 255))
-    draw.text((margin, 178), "???????? ?????", font=small_font, fill=(176, 190, 220))
+    draw.text((margin, 178), BRAND_SUBTITLE, font=small_font, fill=(176, 190, 220))
 
     y = card_y1 + 80
     y = _draw_wrapped_text(
@@ -181,13 +205,24 @@ def render_title_card(script_data: dict[str, Any], output_path: str | Path) -> P
         line_spacing=20,
     )
 
-    draw.text((margin + 52, 1538), cta, font=cta_font, fill=(255, 255, 255))
+    _draw_wrapped_text(
+        draw,
+        cta,
+        cta_font,
+        (cta_x1 + 52, cta_y1 + 48),
+        cta_x2 - cta_x1 - 104,
+        fill=(255, 255, 255),
+        line_spacing=14,
+    )
 
-    draw.text(
-        (margin, 1788),
-        "?? ???????? 100% ???????????. ????? ?????????????? ???? ??????.",
-        font=small_font,
+    _draw_wrapped_text(
+        draw,
+        FOOTER_TEXT,
+        small_font,
+        (margin, 1790),
+        VIDEO_WIDTH - margin * 2,
         fill=(176, 190, 220),
+        line_spacing=10,
     )
 
     image.save(output_path, format="PNG")
@@ -255,7 +290,7 @@ def save_video_stub(
         )
     except FileNotFoundError as exc:
         raise RuntimeError(
-            "FFmpeg ?? ??????. ??????? FFmpeg ??? ????? ???? ? ?????????? FFMPEG_PATH."
+            "FFmpeg not found. Install FFmpeg or set FFMPEG_PATH environment variable."
         ) from exc
     except subprocess.CalledProcessError as exc:
         stderr = exc.stderr.decode("utf-8", errors="replace") if exc.stderr else ""
@@ -264,6 +299,5 @@ def save_video_stub(
     return video_path
 
 
-# Compatibility aliases for future imports.
 save_video = save_video_stub
 build_video = save_video_stub

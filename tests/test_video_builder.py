@@ -6,10 +6,13 @@ from unittest.mock import patch
 from PIL import Image
 
 from app.video_builder import (
+    BRAND_SUBTITLE,
+    FOOTER_TEXT,
     VIDEO_HEIGHT,
     VIDEO_WIDTH,
     build_ffmpeg_command,
     get_duration,
+    normalize_display_text,
     render_title_card,
     safe_filename,
     save_video_stub,
@@ -25,6 +28,14 @@ class TestVideoBuilder(unittest.TestCase):
         self.assertEqual(safe_filename('bad/name:*?'), "bad_name")
         self.assertEqual(safe_filename(""), "video")
 
+    def test_normalize_display_text(self):
+        self.assertEqual(normalize_display_text("Wi\u2011Fi"), "Wi-Fi")
+        self.assertEqual(normalize_display_text(" text "), "text")
+
+    def test_russian_constants_are_not_broken(self):
+        self.assertNotIn("?", BRAND_SUBTITLE)
+        self.assertNotIn("?", FOOTER_TEXT)
+
     def test_get_duration(self):
         self.assertEqual(get_duration({"duration_seconds": 20}), 20)
         self.assertEqual(get_duration({"duration_seconds": "15"}), 15)
@@ -35,7 +46,7 @@ class TestVideoBuilder(unittest.TestCase):
     def test_render_title_card_creates_png(self):
         script_data = {
             "title": "VPN \u0432 \u0430\u044d\u0440\u043e\u043f\u043e\u0440\u0442\u0443",
-            "hook": "\u041e\u0442\u043a\u0440\u044b\u0442\u044b\u0439 Wi-Fi \u2014 \u043f\u043e\u0432\u043e\u0434 \u0431\u044b\u0442\u044c \u0432\u043d\u0438\u043c\u0430\u0442\u0435\u043b\u044c\u043d\u0435\u0435.",
+            "hook": "\u041e\u0442\u043a\u0440\u044b\u0442\u044b\u0439 Wi\u2011Fi \u2014 \u043f\u043e\u0432\u043e\u0434 \u0431\u044b\u0442\u044c \u0432\u043d\u0438\u043c\u0430\u0442\u0435\u043b\u044c\u043d\u0435\u0435.",
             "cta": "MM VPN \u2014 \u0432\u043a\u043b\u044e\u0447\u0438\u043b \u0438 \u043f\u043e\u043b\u044c\u0437\u0443\u0435\u0448\u044c\u0441\u044f \u0441\u043f\u043e\u043a\u043e\u0439\u043d\u0435\u0435.",
         }
 
@@ -71,7 +82,7 @@ class TestVideoBuilder(unittest.TestCase):
         script_data = {
             "topic": topic,
             "title": topic,
-            "hook": "\u041e\u0442\u043a\u0440\u044b\u0442\u044b\u0439 Wi-Fi \u2014 \u043f\u043e\u0432\u043e\u0434 \u0431\u044b\u0442\u044c \u0432\u043d\u0438\u043c\u0430\u0442\u0435\u043b\u044c\u043d\u0435\u0435.",
+            "hook": "\u041e\u0442\u043a\u0440\u044b\u0442\u044b\u0439 Wi\u2011Fi \u2014 \u043f\u043e\u0432\u043e\u0434 \u0431\u044b\u0442\u044c \u0432\u043d\u0438\u043c\u0430\u0442\u0435\u043b\u044c\u043d\u0435\u0435.",
             "cta": "MM VPN \u2014 \u0432\u043a\u043b\u044e\u0447\u0438\u043b \u0438 \u043f\u043e\u043b\u044c\u0437\u0443\u0435\u0448\u044c\u0441\u044f \u0441\u043f\u043e\u043a\u043e\u0439\u043d\u0435\u0435.",
             "duration_seconds": 20,
         }
