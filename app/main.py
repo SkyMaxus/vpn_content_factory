@@ -11,6 +11,7 @@ from config import load_settings
 from ideas import choose_random_topic, load_topics
 from moderation import assert_safe_script
 from script_writer import generate_video_script
+from voice import save_voiceover_stub
 
 
 def safe_filename(topic: str) -> str:
@@ -46,6 +47,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--topics-file", default="data/content_topics.json", help="Path to topics JSON file")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for stable tests/debug")
     parser.add_argument("--print-json", action="store_true", help="Print JSON to console")
+
+    parser.add_argument(
+        "--make-voice",
+        action="store_true",
+        help="Save voiceover text to output/audio as a temporary TTS stub",
+    )
 
     return parser
 
@@ -89,10 +96,16 @@ def main() -> None:
 
     path = save_script(script_data, topic, settings.output_dir)
 
+    voice_path = None
+    if args.make_voice:
+        voice_path = save_voiceover_stub(script_data, topic)
+
     if args.print_json:
         print(json.dumps(script_data, ensure_ascii=False, indent=2))
 
     print(f"Done. Script saved: {path}")
+    if voice_path is not None:
+        print(f"Voiceover saved: {voice_path}")
 
 
 if __name__ == "__main__":
